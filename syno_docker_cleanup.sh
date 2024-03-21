@@ -29,24 +29,24 @@ Error='\e[41m'      # ${Error}
 Off='\e[0m'         # ${Off}
 
 # Show script version
-echo -e "$script $scriptver"
+echo -e "$script $scriptver\n"
 
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
-    echo -e "\n${Error}ERROR${Off} This script must be run as sudo or root!"
+    echo -e "${Error}ERROR${Off} This script must be run as sudo or root!"
     exit 1
 fi
 
 # Check script is running on a Synology NAS
 if ! /usr/bin/uname -a | grep -i synology >/dev/null; then
-    echo -e "\n${Error}ERROR${Off} This script is NOT running on a Synology NAS!"
+    echo -e "${Error}ERROR${Off} This script is NOT running on a Synology NAS!"
     echo "Copy the script to a folder on the Synology and run it from there."
     exit 1
 fi
 
 # Check Container Manager is running
 if ! /usr/syno/bin/synopkg status ContainerManager >/dev/null; then
-    echo -e "\n${Error}ERROR${Off} Container Manager is not running!"
+    echo -e "${Error}ERROR${Off} Container Manager is not running!"
     exit 1
 fi
 
@@ -59,18 +59,18 @@ volume=$(echo "$source" | cut -d"/" -f2)
 
 
 # Get list of @docker/btrfs/subvolumes
-echo -e "\n${Cyan}@docker/btrfs/subvolumes list:${Off}"  # debug
+#echo -e "\n${Cyan}@docker/btrfs/subvolumes list:${Off}"  # debug
 count="0"
 for subvol in /"$volume"/@docker/btrfs/subvolumes/*; do    
     #echo "$subvol"  # debug
     allsubvolumes+=("$subvol")
     count=$((count+1))
 done
-echo "$count @docker/btrfs/subvolumes found."  # debug
+echo -e "$count ${Yellow}total${Off} docker btrfs subvolumes found."
 
 
 # Get list of current @docker/btrfs/subvolumes
-echo -e "\n${Cyan}btrfs subvolume list:${Off}"  # debug
+#echo -e "\n${Cyan}btrfs subvolume list:${Off}"  # debug
 readarray -t temp < <(btrfs subvolume list -p /"$volume"/@docker/btrfs/subvolumes)
 count="0"
 for v in "${temp[@]}"; do
@@ -83,11 +83,11 @@ for v in "${temp[@]}"; do
         count=$((count+1))
     fi
 done
-echo "$count btrfs subvolumes found."  # debug
+echo -e "$count ${Yellow}active${Off} docker btrfs subvolumes found."
 
 
 # Create list of orphan subvolumes
-echo -e "\n${Cyan}Orphan subvolume list:${Off}"  # debug
+#echo -e "\n${Cyan}Orphan subvolume list:${Off}"  # debug
 count="0"
 for v in "${allsubvolumes[@]}"; do
     if [[ ! "${currentsubvolumes[*]}" =~ "$v" ]]; then
@@ -96,7 +96,7 @@ for v in "${allsubvolumes[@]}"; do
         count=$((count+1))
     fi
 done
-echo "$count orphan subvolumes found."  # debug
+echo -e "$count ${Yellow}orphan${Off} docker btrfs subvolumes found."
 
 
 # Stop Container Manager
@@ -106,18 +106,18 @@ echo "$count orphan subvolumes found."  # debug
 
 # Delete orphan subvolumes
 if [[ ${#orphansubvolumes[@]} -gt "0" ]]; then
-    echo -e "\n${Cyan}Deleting orphan subvolumes...${Off}"
+    echo -e "\n${Cyan}Deleting $count orphan subvolumes...${Off}"
     for o in "${orphansubvolumes[@]}"; do
         #echo "$o"  # debug
         if [[ -d "$o" ]]; then
             if rm -rf "$o"; then
                 deleted=$((deleted+1))
             else
-                echo "Failed to delete $o"
+                echo -e "${Red}Failed to delete${Off} $o"
                 failed=$((failed+1))
             fi
         else
-            echo "Failed to delete $o"
+            echo -e "${Red}Failed to delete${Off} $o"
             failed=$((failed+1))
         fi
     done
@@ -127,14 +127,14 @@ fi
 
 
 # Start Container Manager
-#echo "Starting Container Manager..."
+#echo -e "\nStarting Container Manager..."
 #/usr/syno/bin/synopkg start ContainerManager >/dev/null
 
 
 # Shows results
 echo ""
 if [[ $deleted -gt "0" ]]; then
-    echo "Deleted $deleted orphan subvolumes."
+    echo -e "\n${Yellow}Deleted $deleted orphan subvolumes.${Off}"
     echo -e "\nYou can now delete the .syno.bak containers:"
     echo "  1. Open Container Manager."
     echo "  2. Click on Container."
@@ -144,6 +144,6 @@ if [[ $deleted -gt "0" ]]; then
     echo "  6. Repeat steps 3 to 5 for other .syno.bak containers"
 fi
 if [[ $failed -gt "0" ]]; then
-    echo "${Error}ERROR${Off} Failed to delete $failed orphan subvolumes!"
+    echo -e "\n${Error}ERROR${Off} Failed to delete ${Cyan}$failed${Off} orphan subvolumes!"
 fi
 
