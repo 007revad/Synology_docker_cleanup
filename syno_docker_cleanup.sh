@@ -10,30 +10,43 @@
 # sudo -s /volume1/scripts/syno_docker_cleanup.sh
 #----------------------------------------------------------
 
-scriptver="v1.0.0"
+scriptver="v1.0.1"
 script=Synology_docker_cleanup
 repo="007revad/Synology_docker_cleanup"
 scriptname=syno_docker_cleanup
 
+# Shell Colors
+#Black='\e[0;30m'   # ${Black}
+Red='\e[0;31m'      # ${Red}
+#Green='\e[0;32m'   # ${Green}
+Yellow='\e[0;33m'   # ${Yellow}
+#Blue='\e[0;34m'    # ${Blue}
+#Purple='\e[0;35m'  # ${Purple}
+Cyan='\e[0;36m'     # ${Cyan}
+#White='\e[0;37m'   # ${White}
+Error='\e[41m'      # ${Error}
+#Warn='\e[47;31m'   # ${Warn}
+Off='\e[0m'         # ${Off}
+
 # Show script version
-echo -e "$script $scriptver\n"
+echo -e "$script $scriptver"
 
 # Check script is running as root
 if [[ $( whoami ) != "root" ]]; then
-    echo -e "ERROR This script must be run as sudo or root!"
+    echo -e "\n${Error}ERROR${Off} This script must be run as sudo or root!"
     exit 1
 fi
 
 # Check script is running on a Synology NAS
 if ! /usr/bin/uname -a | grep -i synology >/dev/null; then
-    echo "This script is NOT running on a Synology NAS!"
+    echo -e "\n${Error}ERROR${Off} This script is NOT running on a Synology NAS!"
     echo "Copy the script to a folder on the Synology and run it from there."
     exit 1
 fi
 
 # Check Container Manager is running
 if ! /usr/syno/bin/synopkg status ContainerManager >/dev/null; then
-    echo -e "ERROR Container Manager is not running!"
+    echo -e "\n${Error}ERROR${Off} Container Manager is not running!"
     exit 1
 fi
 
@@ -46,7 +59,7 @@ volume=$(echo "$source" | cut -d"/" -f2)
 
 
 # Get list of @docker/btrfs/subvolumes
-echo "@docker/btrfs/subvolumes list:"  # debug
+echo -e "\n${Cyan}@docker/btrfs/subvolumes list:${Off}"  # debug
 count="0"
 for subvol in /"$volume"/@docker/btrfs/subvolumes/*; do    
     #echo "$subvol"  # debug
@@ -57,7 +70,7 @@ echo "$count @docker/btrfs/subvolumes found."  # debug
 
 
 # Get list of current @docker/btrfs/subvolumes
-echo -e "\nbtrfs subvolume list:"  # debug
+echo -e "\n${Cyan}btrfs subvolume list:${Off}"  # debug
 readarray -t temp < <(btrfs subvolume list -p /"$volume"/@docker/btrfs/subvolumes)
 count="0"
 for v in "${temp[@]}"; do
@@ -74,7 +87,7 @@ echo "$count btrfs subvolumes found."  # debug
 
 
 # Create list of orphan subvolumes
-echo -e "\nOrphan subvolume list:"  # debug
+echo -e "\n${Cyan}Orphan subvolume list:${Off}"  # debug
 count="0"
 for v in "${allsubvolumes[@]}"; do
     if [[ ! "${currentsubvolumes[*]}" =~ "$v" ]]; then
@@ -87,13 +100,13 @@ echo "$count orphan subvolumes found."  # debug
 
 
 # Stop Container Manager
-#echo -e "\nStopping Container Manager"
+#echo -e "\nStopping Container Manager..."
 #/usr/syno/bin/synopkg stop ContainerManager >/dev/null
 
 
 # Delete orphan subvolumes
 if [[ ${#orphansubvolumes[@]} -gt "0" ]]; then
-    echo -e "\nDeleting orphan subvolumes..."
+    echo -e "\n${Cyan}Deleting orphan subvolumes...${Off}"
     for o in "${orphansubvolumes[@]}"; do
         #echo "$o"  # debug
         if [[ -d "$o" ]]; then
@@ -109,12 +122,12 @@ if [[ ${#orphansubvolumes[@]} -gt "0" ]]; then
         fi
     done
 else
-    echo -e "\nNo orphan subvolumes to delete."
+    echo -e "\n${Yellow}No orphan subvolumes to delete.${Off}"
 fi
 
 
 # Start Container Manager
-#echo "Starting Container Manager"
+#echo "Starting Container Manager..."
 #/usr/syno/bin/synopkg start ContainerManager >/dev/null
 
 
@@ -131,6 +144,6 @@ if [[ $deleted -gt "0" ]]; then
     echo "  6. Repeat steps 3 to 5 for other .syno.bak containers"
 fi
 if [[ $failed -gt "0" ]]; then
-    echo "Failed to delete $failed orphan subvolumes!"
+    echo "${Error}ERROR${Off} Failed to delete $failed orphan subvolumes!"
 fi
 
