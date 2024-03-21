@@ -1,2 +1,2 @@
-# Synology_docker_cleanup
+# Synology docker cleanup
 Remove orphan docker btrfs subvolumes in Synology DSM 7
