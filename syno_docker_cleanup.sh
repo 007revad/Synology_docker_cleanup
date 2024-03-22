@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2076
-#----------------------------------------------------------
-# Remove orphan docker btrfs subvolumes in Synology DSM 7
+#--------------------------------------------------------------------
+# Remove orphan docker btrfs subvolumes in Synology DSM 7 and DSM 6
 #
 # Github: https://github.com/007revad/Synology_docker_cleanup
 # Script verified at https://www.shellcheck.net/
 #
 # To run in a shell (replace /volume1/scripts/ with path to script):
 # sudo -s /volume1/scripts/syno_docker_cleanup.sh
-#----------------------------------------------------------
+#--------------------------------------------------------------------
 
-scriptver="v1.0.1"
+scriptver="v1.1.2"
 script=Synology_docker_cleanup
 repo="007revad/Synology_docker_cleanup"
 scriptname=syno_docker_cleanup
@@ -44,16 +44,37 @@ if ! /usr/bin/uname -a | grep -i synology >/dev/null; then
     exit 1
 fi
 
-# Check Container Manager is running
-if ! /usr/syno/bin/synopkg status ContainerManager >/dev/null; then
-    echo -e "${Error}ERROR${Off} Container Manager is not running!"
+# Check Container Manager or Docker is installed
+if [[ -d /var/packages/ContainerManager ]]; then
+    docker_pkg="ContainerManager"
+    docker_pkg_name="Container Manager"
+elif [[ -d /var/packages/Docker ]]; then
+    docker_pkg="Docker"
+    docker_pkg_name="Docker"
+else
+    echo -e "${Error}ERROR${Off} Container Manager or Docker is not installed!"
     exit 1
 fi
 
+# Check Container Manager or Docker is running
+if ! /usr/syno/bin/synopkg status "$docker_pkg" >/dev/null; then
+    echo -e "${Error}ERROR${Off} $docker_pkg_name is not running!"
+    exit 1
+fi
 
 # Get volume @docker is on
-source=$(readlink /var/packages/ContainerManager/var/docker)
-volume=$(echo "$source" | cut -d"/" -f2)
+if [[ $docker_pkg == "ContainerManager" ]]; then
+    source=$(readlink /var/packages/ContainerManager/var/docker)
+else
+    source=$(readlink /var/packages/Docker/target/docker)
+fi
+if [[ -d $source ]]; then
+    volume=$(echo "$source" | cut -d"/" -f2)
+else
+    echo -e "${Error}ERROR${Off} @docker folder not found!"
+    echo "$source"
+    exit 1
+fi
 
 #volume="volume2"  # debug
 
@@ -99,9 +120,9 @@ done
 echo -e "$count ${Yellow}orphan${Off} docker btrfs subvolumes found."
 
 
-# Stop Container Manager
-#echo -e "\nStopping Container Manager..."
-#/usr/syno/bin/synopkg stop ContainerManager >/dev/null
+# Stop Container Manager or Docker
+#echo -e "\nStopping $docker_pkg_name..."
+#/usr/syno/bin/synopkg stop $docker_pkg >/dev/null
 
 
 # Delete orphan subvolumes
@@ -126,22 +147,33 @@ else
 fi
 
 
-# Start Container Manager
-#echo -e "\nStarting Container Manager..."
-#/usr/syno/bin/synopkg start ContainerManager >/dev/null
+# Start Container Manager or Docker
+#echo -e "\nStarting $docker_pkg_name..."
+#/usr/syno/bin/synopkg start $docker_pkg >/dev/null
 
 
 # Shows results
 echo ""
 if [[ $deleted -gt "0" ]]; then
-    echo -e "\n${Yellow}Deleted $deleted orphan subvolumes.${Off}"
-    echo -e "\nYou can now delete the .syno.bak containers:"
-    echo "  1. Open Container Manager."
-    echo "  2. Click on Container."
-    echo "  3. Click on the little dot to the left of a container that ends in .syno.bak"
-    echo "  4. Click on Action and select Delete."
-    echo "  5. Click on the Delete button."
-    echo "  6. Repeat steps 3 to 5 for other .syno.bak containers"
+    if [[ $docker_pkg == "ContainerManager" ]]; then
+        echo -e "\n${Yellow}Deleted $deleted orphan subvolumes.${Off}"
+        echo -e "\nYou can now delete the .syno.bak containers:"
+        echo "  1. Open Container Manager."
+        echo "  2. Click on Container."
+        echo "  3. Click on the little dot to the left of a container that ends in .syno.bak"
+        echo "  4. Click on Action and select Delete."
+        echo "  5. Click on the Delete button."
+        echo "  6. Repeat steps 3 to 5 for other .syno.bak containers"
+    else
+        echo -e "\n${Yellow}Deleted $deleted orphan subvolumes.${Off}"
+        echo -e "\nYou can now delete the .syno.bak containers:"
+        echo "  1. Open Docker."
+        echo "  2. Click on Container."
+        echo "  3. Select a container that ends in .syno.bak"
+        echo "  4. Click on Action and select Delete."
+        echo "  5. Click on the Delete button."
+        echo "  6. Repeat steps 3 to 5 for other .syno.bak containers"
+    fi
 fi
 if [[ $failed -gt "0" ]]; then
     echo -e "\n${Error}ERROR${Off} Failed to delete ${Cyan}$failed${Off} orphan subvolumes!"
