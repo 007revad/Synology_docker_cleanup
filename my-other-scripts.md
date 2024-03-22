@@ -30,7 +30,7 @@
   - Easily move Synology packages from one volume to another volume.
 
 - **<a href="https://github.com/007revad/Synology_docker_cleanup">Synology_docker_cleanup</a>**
-  - Remove orphan docker btrfs subvolumes in Synology DSM 7.
+  - Remove orphan docker btrfs subvolumes and images in Synology DSM 7 and DSM 6.
 
 - **<a href="https://github.com/007revad/Synology_enable_M2_card">Synology_enable_M2_card</a>**
   - Enable Synology M.2 PCIe cards in Synology NAS that don't officially support them.
