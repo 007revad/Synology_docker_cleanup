@@ -1,3 +1,6 @@
+v1.2.3
+- Now also removes orphan images.
+
 v1.1.2
 - Added DSM 6 Docker support.
 - Improved message formatting.
