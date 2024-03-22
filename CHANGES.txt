@@ -1,2 +1,6 @@
+v1.1.2
+- Added DSM 6 Docker support.
+- Improved message formatting.
+
 v1.0.0
 - Initial release.
