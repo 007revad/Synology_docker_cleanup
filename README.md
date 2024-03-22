@@ -7,7 +7,7 @@
 
 ### Description
 
-Remove orphan docker btrfs subvolumes in Synology DSM 7
+Remove orphan docker btrfs subvolumes in Synology DSM 7 and DSM 6
 
 ### Screenshots
 
