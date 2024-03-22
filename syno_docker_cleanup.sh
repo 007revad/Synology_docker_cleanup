@@ -10,7 +10,7 @@
 # sudo -s /volume1/scripts/syno_docker_cleanup.sh
 #--------------------------------------------------------------------
 
-scriptver="v1.1.2"
+scriptver="v1.2.3"
 script=Synology_docker_cleanup
 repo="007revad/Synology_docker_cleanup"
 scriptname=syno_docker_cleanup
@@ -87,7 +87,9 @@ for subvol in /"$volume"/@docker/btrfs/subvolumes/*; do
     allsubvolumes+=("$subvol")
     count=$((count+1))
 done
-echo -e "$count ${Yellow}total${Off} docker btrfs subvolumes found."
+s=""
+if [[ $count -gt "0" ]]; then s="s"; fi
+echo -e "$count ${Yellow}total${Off} docker btrfs subvolume$s found."
 
 
 # Get list of current @docker/btrfs/subvolumes
@@ -104,7 +106,9 @@ for v in "${temp[@]}"; do
         count=$((count+1))
     fi
 done
-echo -e "$count ${Yellow}active${Off} docker btrfs subvolumes found."
+s=""
+if [[ $count -gt "0" ]]; then s="s"; fi
+echo -e "$count ${Yellow}active${Off} docker btrfs subvolume$s found."
 
 
 # Create list of orphan subvolumes
@@ -117,7 +121,9 @@ for v in "${allsubvolumes[@]}"; do
         count=$((count+1))
     fi
 done
-echo -e "$count ${Yellow}orphan${Off} docker btrfs subvolumes found."
+s=""
+if [[ $count -gt "0" ]]; then s="s"; fi
+echo -e "$count ${Yellow}orphan${Off} docker btrfs subvolume$s found."
 
 
 # Stop Container Manager or Docker
@@ -127,7 +133,9 @@ echo -e "$count ${Yellow}orphan${Off} docker btrfs subvolumes found."
 
 # Delete orphan subvolumes
 if [[ ${#orphansubvolumes[@]} -gt "0" ]]; then
-    echo -e "\n${Cyan}Deleting $count orphan subvolumes...${Off}"
+    s=""
+    if [[ $count -gt "0" ]]; then s="s"; fi
+    echo -e "\n${Cyan}Deleting $count orphan subvolume$s...${Off}"
     for o in "${orphansubvolumes[@]}"; do
         #echo "$o"  # debug
         if [[ -d "$o" ]]; then
@@ -150,6 +158,19 @@ fi
 # Start Container Manager or Docker
 #echo -e "\nStarting $docker_pkg_name..."
 #/usr/syno/bin/synopkg start $docker_pkg >/dev/null
+
+
+# Delete dangling images
+readarray -t temp < <(docker images --filter "dangling=true")
+count=$((${#temp[@]}-1))
+if [[ $count -gt "0" ]]; then
+    s=""
+    if [[ $count -gt "1" ]]; then s="s"; fi
+    echo -e "\n${Cyan}Deleting $count orphan image$s...${Off}"
+    docker rmi "$(docker images -f "dangling=true" -q)"
+else
+    echo -e "\n${Yellow}No dangling images to delete.${Off}"
+fi
 
 
 # Shows results
