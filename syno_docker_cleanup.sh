@@ -10,7 +10,7 @@
 # sudo -s /volume1/scripts/syno_docker_cleanup.sh
 #--------------------------------------------------------------------
 
-scriptver="v1.2.3"
+scriptver="v1.2.4"
 script=Synology_docker_cleanup
 repo="007revad/Synology_docker_cleanup"
 scriptname=syno_docker_cleanup
@@ -176,19 +176,16 @@ fi
 # Shows results
 echo ""
 if [[ $deleted -gt "0" ]]; then
-    if [[ $docker_pkg == "ContainerManager" ]]; then
-        echo -e "\n${Yellow}Deleted $deleted orphan subvolumes.${Off}"
-        echo -e "\nYou can now delete the .syno.bak containers:"
-        echo "  1. Open Container Manager."
-        echo "  2. Click on Container."
-        echo "  3. Click on the little dot to the left of a container that ends in .syno.bak"
-        echo "  4. Click on Action and select Delete."
-        echo "  5. Click on the Delete button."
-        echo "  6. Repeat steps 3 to 5 for other .syno.bak containers"
-    else
-        echo -e "\n${Yellow}Deleted $deleted orphan subvolumes.${Off}"
-        echo -e "\nYou can now delete the .syno.bak containers:"
-        echo "  1. Open Docker."
+    echo -e "\n${Yellow}Deleted $deleted orphan subvolumes.${Off}"
+
+    # Delete .syno.bak containers
+    if [[ ! $(docker ps -a --format "{{.Names}}" | grep -qE .*\.syno\.bak$) ]]; then
+        echo -e "\nYou can now delete any containers with names ending in .syno.bak:"
+        if [[ $docker_pkg == "ContainerManager" ]]; then
+            echo "  1. Open Container Manager."
+        else
+            echo "  1. Open $docker_pkg."
+        fi
         echo "  2. Click on Container."
         echo "  3. Select a container that ends in .syno.bak"
         echo "  4. Click on Action and select Delete."
