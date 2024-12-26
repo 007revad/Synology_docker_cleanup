@@ -1,3 +1,6 @@
+v1.2.4
+- Changed to only show steps to delete .syno.bak containers if there are .syno.bak containers.
+
 v1.2.3
 - Now also removes orphan images.
 - Improved message formatting.
