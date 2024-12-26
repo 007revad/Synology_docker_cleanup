@@ -8,11 +8,11 @@
 
 ### Description
 
-Remove orphan docker btrfs subvolumes and images in Synology DSM 7 and DSM 6
+Remove orphan docker btrfs subvolumes and dangling images in Synology DSM 7 and DSM 6
 
 ### After running the script
 
-If any containers get stuck while updating just stop then start Container Manager.
+If any containers get stuck while updating just stop then start Container Manager (or Docker for DSM 6).
 <p align="left"><img src="/images/updating.png"></p>
 
 If you have any duplicate containers whose name ends in .syno.bak select it then click on "Action > Delete".
